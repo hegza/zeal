@@ -58,7 +58,7 @@ mod plot_demo {
         open_panel: Panel,
     }
 
-    impl super::Demo for PlotDemo {
+    impl PlotDemo {
         fn name(&self) -> &'static str {
             "🗠 Plot"
         }
@@ -73,7 +73,7 @@ mod plot_demo {
         }
     }
 
-    impl super::View for PlotDemo {
+    impl PlotDemo {
         fn ui(&mut self, ui: &mut Ui) {
             ui.horizontal(|ui| {
                 egui::reset_button(ui, self);
@@ -659,14 +659,6 @@ mod plot_demo {
             ))
         }
 
-        fn configure_plot(plot_ui: &mut egui_plot::PlotUi) {
-            plot_ui.line(LinkedAxesDemo::line_with_slope(0.5));
-            plot_ui.line(LinkedAxesDemo::line_with_slope(1.0));
-            plot_ui.line(LinkedAxesDemo::line_with_slope(2.0));
-            plot_ui.line(LinkedAxesDemo::sin());
-            plot_ui.line(LinkedAxesDemo::cos());
-        }
-
         fn ui(&mut self, ui: &mut Ui) -> Response {
             ui.horizontal(|ui| {
                 ui.label("Linked axes:");
@@ -1064,12 +1056,13 @@ mod plot_demo {
 
 pub use color_test::ColorTest;
 pub use demo::DemoWindows;
+use eframe::Theme;
 use plot_demo::PlotDemo;
 
 /// View some Rust code with syntax highlighting and selection.
 pub(crate) fn rust_view_ui(ui: &mut egui::Ui, code: &str) {
     let language = "rs";
-    let theme = egui_extras::syntax_highlighting::CodeTheme::from_memory(ui.ctx());
+    let theme = Theme::Dark;
     egui_extras::syntax_highlighting::code_view_ui(ui, &theme, code, language);
 }
 
@@ -1748,7 +1741,6 @@ mod color_test {
         )
     }
 }
-
 
 // When compiling natively:
 fn main() -> Result<(), eframe::Error> {
