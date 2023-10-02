@@ -1,75 +1,162 @@
-struct MyApp {
-    name: String,
-    age: u32,
-}
-
-impl Default for MyApp {
-    fn default() -> Self {
-        Self {
-            name: "Arthur".to_owned(),
-            age: 42,
-        }
-    }
-}
-
-/*
-impl eframe::App for MyApp {
-    fn update(&mut self, ctx: &bevy::egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                // TODO: the bevy_egui view with the bubbles
-                //ui.
-                // TODO: configurations bar
-                ui.vertical(|ui| ui.collapsing("Test", ui.vertical(|ui| ui.label("Test2"))))
-            })
-            /*
-            ui.heading("My egui Application");
-            ui.horizontal(|ui| {
-                let name_label = ui.label("Your name: ");
-                ui.text_edit_singleline(&mut self.name)
-                    .labelled_by(name_label.id);
-            });
-            ui.add(egui::Slider::new(&mut self.age, 0..=120).text("age"));
-            if ui.button("Click each year").clicked() {
-                self.age += 1;
-            }
-            ui.label(format!("Hello '{}', age {}", self.name, self.age));
-            */
-        });
-    }
-}
-*/
-
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
-fn ui_example_system(mut contexts: EguiContexts) {
-    egui::Window::new("Hello").show(contexts.ctx_mut(), |ui| {
-        ui.label("world");
-    });
+static mut CONNECTION_LENGTH: f64 = 20.0;
+
+fn ui_example_system(
+    mut contexts: EguiContexts,
+    mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
+) {
+    let ctx = contexts.ctx_mut();
+
+    occupied_screen_space.left = egui::SidePanel::left("left_panel")
+        .resizable(true)
+        .show(ctx, |ui| {
+            ui.label("Left resizeable panel");
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+        })
+        .response
+        .rect
+        .width();
+    occupied_screen_space.right = egui::SidePanel::right("right_panel")
+        .resizable(true)
+        .show(ctx, |ui| {
+            ui.label("Right resizeable panel");
+            ui.horizontal(|ui| {
+                // TODO: the bevy_egui view with the bubbles
+
+                //ui.
+                // TODO: configurations bar
+                ui.vertical(|ui| {
+                    ui.collapsing("Physics configurations", |ui| {
+                        ui.add(egui::Slider::new(
+                            &mut unsafe { CONNECTION_LENGTH },
+                            0f64..=100.0,
+                        ));
+                        ui.vertical(|ui| ui.label("Test2"))
+                    })
+                })
+            });
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+        })
+        .response
+        .rect
+        .width();
+    occupied_screen_space.top = egui::TopBottomPanel::top("top_panel")
+        .resizable(true)
+        .show(ctx, |ui| {
+            ui.label("Top resizeable panel");
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+        })
+        .response
+        .rect
+        .height();
+    occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
+        .resizable(true)
+        .show(ctx, |ui| {
+            ui.label("Bottom resizeable panel");
+            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
+        })
+        .response
+        .rect
+        .height();
 }
 
 fn main() -> Result<(), eframe::Error> {
+    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
+        .init_resource::<OccupiedScreenSpace>()
+        .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Update, ui_example_system)
+        //.add_systems(Update, update_camera_transform_system)
         .run();
-
-    /*
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
-    let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(640.0, 480.0)),
-        run_and_return: false,
-        ..Default::default()
-    };
-    eframe::run_native(
-        env!("CARGO_PKG_NAME"),
-        options,
-        Box::new(|_cc| Box::<MyApp>::default()),
-    )*/
     Ok(())
 }
 
+#[derive(Default, Resource)]
+struct OccupiedScreenSpace {
+    left: f32,
+    top: f32,
+    right: f32,
+    bottom: f32,
+}
+
+const CAMERA_TARGET: Vec3 = Vec3::ZERO;
+
+#[derive(Resource, Deref, DerefMut)]
+struct OriginalCameraTransform(Transform);
+
+fn setup_system(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane {
+            size: 5.0,
+            subdivisions: 0,
+        })),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        ..Default::default()
+    });
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        transform: Transform::from_xyz(0.0, 0.5, 0.0),
+        ..Default::default()
+    });
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 1500.0,
+            shadows_enabled: true,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..Default::default()
+    });
+
+    let camera_pos = Vec3::new(-2.0, 2.5, 5.0);
+    let camera_transform =
+        Transform::from_translation(camera_pos).looking_at(CAMERA_TARGET, Vec3::Y);
+    commands.insert_resource(OriginalCameraTransform(camera_transform));
+
+    /*
+    commands.spawn(Camera3dBundle {
+        transform: camera_transform,
+        ..Default::default()
+    });
+     */
+}
+
+fn update_camera_transform_system(
+    occupied_screen_space: Res<OccupiedScreenSpace>,
+    original_camera_transform: Res<OriginalCameraTransform>,
+    windows: Query<&Window, With<PrimaryWindow>>,
+    mut camera_query: Query<(&Projection, &mut Transform)>,
+) {
+    let (camera_projection, mut transform) = match camera_query.get_single_mut() {
+        Ok((Projection::Perspective(projection), transform)) => (projection, transform),
+        _ => unreachable!(),
+    };
+
+    let distance_to_target = (CAMERA_TARGET - original_camera_transform.translation).length();
+    let frustum_height = 2.0 * distance_to_target * (camera_projection.fov * 0.5).tan();
+    let frustum_width = frustum_height * camera_projection.aspect_ratio;
+
+    let window = windows.single();
+
+    let left_taken = occupied_screen_space.left / window.width();
+    let right_taken = occupied_screen_space.right / window.width();
+    let top_taken = occupied_screen_space.top / window.height();
+    let bottom_taken = occupied_screen_space.bottom / window.height();
+    transform.translation = original_camera_transform.translation
+        + transform.rotation.mul_vec3(Vec3::new(
+            (right_taken - left_taken) * frustum_width * 0.5,
+            (top_taken - bottom_taken) * frustum_height * 0.5,
+            0.0,
+        ));
+}
