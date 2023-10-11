@@ -8,3 +8,7 @@
 
 - Multi-select bubbles to form a cluster
 - Multi-select clusters to form a super-cluster
+- Transaction buffer: store undo buffer, allow time travel
+- Display controls on screen
+- First created edge will be the primary edge that can be used for DAG representations
+  - DAG representation can be output to mermaid

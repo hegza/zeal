@@ -9,7 +9,10 @@ Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
   - `shift` - multi-select
 
 - `RMB` - context menu
-  - on edge: remove edge + etc.
+  - on edge:
+    - remove edge
+    - change edge type
+    - etc.
   - on bubble: remove bubble + etc.
   - `crtl`
 
