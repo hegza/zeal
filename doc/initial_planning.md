@@ -12,3 +12,4 @@
 - Display controls on screen
 - First created edge will be the primary edge that can be used for DAG representations
   - DAG representation can be output to mermaid
+- Show modalities on screen

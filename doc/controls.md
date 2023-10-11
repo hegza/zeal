@@ -6,7 +6,9 @@ Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
 
 - `LMB`
   - `click` select bubble or edge (travel mode only)
-  - `drag` on bubble: move bubble
+  - `drag`
+    - on bubble: move bubble (physics)
+    - on background: move
   - `shift` highlight selectables (items, clusters, super-clusters) / multi-select
 
 - `RMB` - context menu
