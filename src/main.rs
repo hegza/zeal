@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::Projection, window::PrimaryWindow};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 static mut CONNECTION_LENGTH: f64 = 20.0;
@@ -23,10 +23,6 @@ fn ui_example_system(
         .show(ctx, |ui| {
             ui.label("Right resizeable panel");
             ui.horizontal(|ui| {
-                // TODO: the bevy_egui view with the bubbles
-
-                //ui.
-                // TODO: configurations bar
                 ui.vertical(|ui| {
                     ui.collapsing("Physics configurations", |ui| {
                         ui.add(egui::Slider::new(
@@ -60,10 +56,10 @@ fn ui_example_system(
         .response
         .rect
         .height();
+    // TODO: the bevy_egui view with the bubbles
 }
 
-fn main() -> Result<(), eframe::Error> {
-    env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
@@ -72,7 +68,7 @@ fn main() -> Result<(), eframe::Error> {
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Update, ui_example_system)
-        //.add_systems(Update, update_camera_transform_system)
+        .add_systems(Update, update_cam)
         .run();
     Ok(())
 }
@@ -85,78 +81,56 @@ struct OccupiedScreenSpace {
     bottom: f32,
 }
 
-const CAMERA_TARGET: Vec3 = Vec3::ZERO;
-
-#[derive(Resource, Deref, DerefMut)]
-struct OriginalCameraTransform(Transform);
+#[derive(Component)]
+struct MainCamera;
 
 fn setup_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane {
-            size: 5.0,
-            subdivisions: 0,
-        })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..Default::default()
+    commands.spawn((Camera2dBundle::default(), MainCamera));
+
+    // Circle
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(shape::Circle::new(50.).into()).into(),
+        material: materials.add(ColorMaterial::from(Color::PURPLE)),
+        transform: Transform::from_translation(Vec3::new(-150., 0., 0.))
+            .with_scale(Vec3::new(2., 1., 0.)),
+        ..default()
     });
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        ..Default::default()
-    });
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..Default::default()
+
+    // Rectangle
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(50.0, 100.0)),
+            ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..Default::default()
+        transform: Transform::from_translation(Vec3::new(-50., 0., 0.)),
+        ..default()
     });
 
-    let camera_pos = Vec3::new(-2.0, 2.5, 5.0);
-    let camera_transform =
-        Transform::from_translation(camera_pos).looking_at(CAMERA_TARGET, Vec3::Y);
-    commands.insert_resource(OriginalCameraTransform(camera_transform));
-
-    /*
-    commands.spawn(Camera3dBundle {
-        transform: camera_transform,
-        ..Default::default()
+    // Quad
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes
+            .add(shape::Quad::new(Vec2::new(50., 100.)).into())
+            .into(),
+        material: materials.add(ColorMaterial::from(Color::LIME_GREEN)),
+        transform: Transform::from_translation(Vec3::new(50., 0., 0.)),
+        ..default()
     });
-     */
+
+    // Hexagon
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(shape::RegularPolygon::new(50., 6).into()).into(),
+        material: materials.add(ColorMaterial::from(Color::TURQUOISE)),
+        transform: Transform::from_translation(Vec3::new(150., 0., 0.)),
+        ..default()
+    });
 }
 
-fn update_camera_transform_system(
-    occupied_screen_space: Res<OccupiedScreenSpace>,
-    original_camera_transform: Res<OriginalCameraTransform>,
-    windows: Query<&Window, With<PrimaryWindow>>,
-    mut camera_query: Query<(&Projection, &mut Transform)>,
-) {
-    let (camera_projection, mut transform) = match camera_query.get_single_mut() {
-        Ok((Projection::Perspective(projection), transform)) => (projection, transform),
-        _ => unreachable!(),
-    };
-
-    let distance_to_target = (CAMERA_TARGET - original_camera_transform.translation).length();
-    let frustum_height = 2.0 * distance_to_target * (camera_projection.fov * 0.5).tan();
-    let frustum_width = frustum_height * camera_projection.aspect_ratio;
-
-    let window = windows.single();
-
-    let left_taken = occupied_screen_space.left / window.width();
-    let right_taken = occupied_screen_space.right / window.width();
-    let top_taken = occupied_screen_space.top / window.height();
-    let bottom_taken = occupied_screen_space.bottom / window.height();
-    transform.translation = original_camera_transform.translation
-        + transform.rotation.mul_vec3(Vec3::new(
-            (right_taken - left_taken) * frustum_width * 0.5,
-            (top_taken - bottom_taken) * frustum_height * 0.5,
-            0.0,
-        ));
+fn update_cam(time: Res<Time>, mut q: Query<&mut OrthographicProjection, With<MainCamera>>) {
+    let mut projection = q.single_mut();
+    projection.viewport_origin += Vec2::new(0.01, 0.) * time.delta_seconds();
 }
