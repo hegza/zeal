@@ -1,88 +1,33 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+mod components;
+mod events;
+mod resources;
+mod ui;
+
+use bevy::{input::mouse::MouseMotion, prelude::*, sprite::MaterialMesh2dBundle};
+use bevy_egui::EguiPlugin;
+use components::MainCamera;
+use events::ViewMoveEvent;
+use resources::{InputMode, OccupiedScreenSpace};
+use ui::ui_example_system;
 
 static mut CONNECTION_LENGTH: f64 = 20.0;
-
-fn ui_example_system(
-    mut contexts: EguiContexts,
-    mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
-) {
-    let ctx = contexts.ctx_mut();
-
-    occupied_screen_space.left = egui::SidePanel::left("left_panel")
-        .resizable(true)
-        .show(ctx, |ui| {
-            ui.label("Left resizeable panel");
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        })
-        .response
-        .rect
-        .width();
-    occupied_screen_space.right = egui::SidePanel::right("right_panel")
-        .resizable(true)
-        .show(ctx, |ui| {
-            ui.label("Right resizeable panel");
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.collapsing("Physics configurations", |ui| {
-                        ui.add(egui::Slider::new(
-                            &mut unsafe { CONNECTION_LENGTH },
-                            0f64..=100.0,
-                        ));
-                        ui.vertical(|ui| ui.label("Test2"))
-                    })
-                })
-            });
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        })
-        .response
-        .rect
-        .width();
-    occupied_screen_space.top = egui::TopBottomPanel::top("top_panel")
-        .resizable(true)
-        .show(ctx, |ui| {
-            ui.label("Top resizeable panel");
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        })
-        .response
-        .rect
-        .height();
-    occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
-        .resizable(true)
-        .show(ctx, |ui| {
-            ui.label("Bottom resizeable panel");
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        })
-        .response
-        .rect
-        .height();
-    // TODO: the bevy_egui view with the bubbles
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
+        .add_event::<ViewMoveEvent>()
         .init_resource::<OccupiedScreenSpace>()
+        .init_resource::<InputMode>()
         .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Update, ui_example_system)
-        .add_systems(Update, update_cam)
+        .add_systems(Update, handle_mouse)
+        .add_systems(Update, handle_view_event)
         .run();
     Ok(())
 }
-
-#[derive(Default, Resource)]
-struct OccupiedScreenSpace {
-    left: f32,
-    top: f32,
-    right: f32,
-    bottom: f32,
-}
-
-#[derive(Component)]
-struct MainCamera;
 
 fn setup_system(
     mut commands: Commands,
@@ -130,7 +75,31 @@ fn setup_system(
     });
 }
 
-fn update_cam(time: Res<Time>, mut q: Query<&mut OrthographicProjection, With<MainCamera>>) {
-    let mut projection = q.single_mut();
-    projection.viewport_origin += Vec2::new(0.01, 0.) * time.delta_seconds();
+/// # Documentation
+///
+/// Input handling: https://bevy-cheatbook.github.io/builtins.html#input-handling-resources
+/// Input event list: https://bevy-cheatbook.github.io/builtins.html#input-events
+fn handle_mouse(
+    btn_state: Res<Input<MouseButton>>,
+    mut mouse_motion: EventReader<MouseMotion>,
+    mut view_moves: EventWriter<ViewMoveEvent>,
+) {
+    let lmb_pressed = btn_state.pressed(MouseButton::Left);
+    if lmb_pressed {
+        for motion in mouse_motion.iter() {
+            view_moves.send(ViewMoveEvent::new(-motion.delta.x, -motion.delta.y))
+        }
+    }
+}
+
+fn handle_view_event(
+    mut view_moves: EventReader<ViewMoveEvent>,
+    mut q: Query<&mut OrthographicProjection, With<MainCamera>>,
+) {
+    for motion in view_moves.iter() {
+        let mut projection = q.single_mut();
+        let a = &projection.area;
+        let mov = Vec2::new(-motion.x / a.width(), motion.y / a.height());
+        projection.viewport_origin += mov;
+    }
 }
