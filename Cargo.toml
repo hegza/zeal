@@ -6,8 +6,33 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.11"
-bevy_egui = "0.21"
-eframe = "0.23.0"
-egui = "0.23.0"
-env_logger = "0.10.0"
+bevy = { version = "0.11", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi-threaded",
+    "png",
+    "ktx2",
+    "zstd",
+    "x11",
+    "bevy_gizmos",
+    "default_font",
+    "webgl2",
+] }
+eframe = { version = "0.23.0", default-features = false, features = [
+    "default_fonts",
+] }
+bevy_egui = "0.22"
+
+# This is required for the window menus to work properly (at least on WSL Windows)
+winit = "0.28.1"
