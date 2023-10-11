@@ -4,9 +4,10 @@
 
 Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
 
-- `LMB` - select (bubble or edge)
+- `LMB`
+  - `click` select bubble or edge (travel mode only)
   - `drag` on bubble: move bubble
-  - `shift` - multi-select
+  - `shift` highlight selectables (items, clusters, super-clusters) / multi-select
 
 - `RMB` - context menu
   - on edge:
@@ -18,6 +19,8 @@ Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
 
 ## Keyboard
 
+Travel mode is the default.
+
 - `i` - change to insert mode
 - `esc` - return to travel mode
 
@@ -28,6 +31,13 @@ Text editing: the usual hotkeys apply: `ctrl` + `home`/`end` to move to start of
 
 Travel mode:
 
-- `arrows` / `hjkl` / `yubn`
+- `arrows`
+  - Move screen around
+- `hjkl` / `yubn`
   - press - show guide, highlight closest, allow combining multiple keys
   - release - move to closest bubble near guide
+
+## View / automatic
+
+If selection goes close enough to edge, the viewport is shifted to bring the selection fully in
+view.
