@@ -1,5 +1,14 @@
 # Controls
 
+## About modes
+
+Editor is always in one of two modes:
+
+- Travel
+- Input
+
+Travel mode is the default.
+
 ## Mouse
 
 Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
@@ -20,8 +29,6 @@ Philosophy: LMB to select and manipulate physics (no-op). RMB for context menu.
   - `crtl`
 
 ## Keyboard
-
-Travel mode is the default.
 
 - `i` - change to insert mode
 - `esc` - return to travel mode
