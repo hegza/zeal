@@ -1,6 +1,12 @@
-use crate::resources::{InputMode, OccupiedScreenSpace};
+use crate::{
+    physics::{GlobalPhysics, DEFAULT_FCENTER, DEFAULT_FREPEL, DEFAULT_SLOW_MULT},
+    resources::{InputMode, OccupiedScreenSpace},
+};
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{
+    egui::{self, CollapsingHeader},
+    EguiContexts,
+};
 
 /// Capitalizes the first character in s.
 pub fn capitalize(s: &str) -> String {
@@ -15,6 +21,7 @@ pub fn ui_example_system(
     mut contexts: EguiContexts,
     mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
     input_mode: Res<InputMode>,
+    mut gphysics: ResMut<GlobalPhysics>,
 ) {
     let ctx = contexts.ctx_mut();
 
@@ -34,14 +41,38 @@ pub fn ui_example_system(
             ui.label("Right resizeable panel");
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    ui.collapsing("Physics configurations", |ui| {
-                        ui.add(egui::Label::new("Connection length"));
+                    CollapsingHeader::new("Physics configurations").show(ui, |ui| {
+                        /*ui.add(egui::Label::new("Connection length"));
                         ui.add(egui::Slider::new(
                             &mut unsafe { crate::CONNECTION_LENGTH },
                             0f64..=100.0,
                         ));
-                        ui.vertical(|ui| ui.label("Test2"))
-                    })
+                        */
+                        ui.add(egui::Label::new("Repel force"));
+                        ui.add(
+                            egui::Slider::new(
+                                &mut gphysics.frepel,
+                                0.1 * DEFAULT_FREPEL..=10. * DEFAULT_FREPEL,
+                            )
+                            .logarithmic(true),
+                        );
+                        ui.add(egui::Label::new("Gravity"));
+                        ui.add(
+                            egui::Slider::new(
+                                &mut gphysics.fcenter,
+                                0.1 * DEFAULT_FCENTER..=10. * DEFAULT_FCENTER,
+                            )
+                            .logarithmic(true),
+                        );
+                        ui.add(egui::Label::new("Slow / friction"));
+                        ui.add(
+                            egui::Slider::new(
+                                &mut gphysics.slow_mult,
+                                0.1 * DEFAULT_SLOW_MULT..=10. * DEFAULT_SLOW_MULT,
+                            )
+                            .logarithmic(true),
+                        );
+                    });
                 })
             });
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());

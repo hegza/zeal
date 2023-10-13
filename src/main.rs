@@ -14,8 +14,6 @@ use ui::ui_example_system;
 
 use crate::camera::MainCamera;
 
-static mut CONNECTION_LENGTH: f64 = 20.0;
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -41,25 +39,30 @@ fn setup_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut gphysics: ResMut<GlobalPhysics>,
 ) {
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
     // Circle
-    let pos = Vec2::new(-150., 0.);
-    commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(shape::Circle::new(50.).into()).into(),
-            material: materials.add(ColorMaterial::from(Color::PURPLE)),
-            transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 0.))
-                .with_scale(Vec3::new(2., 1., 0.)),
-            ..default()
-        },
-        BubblePhysics {
-            pos,
-            vel: Vec2::new(0., 0.),
-        },
-    ));
+    let positions = [
+        Vec2::new(-150., 50.),
+        Vec2::new(150., 50.),
+        Vec2::new(150., -50.),
+    ];
+    for pos in positions {
+        commands.spawn((
+            MaterialMesh2dBundle {
+                mesh: meshes.add(shape::Circle::new(50.).into()).into(),
+                material: materials.add(ColorMaterial::from(Color::PURPLE)),
+                transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 0.))
+                    .with_scale(Vec3::new(2., 1., 0.)),
+                ..default()
+            },
+            BubblePhysics {
+                pos,
+                vel: Vec2::new(0., 0.),
+            },
+        ));
+    }
 
     commands.spawn(MaterialMesh2dBundle {
         mesh: meshes.add(shape::Circle::new(5.).into()).into(),
@@ -67,11 +70,6 @@ fn setup_system(
         transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
         ..default()
     });
-
-    // Configure physics
-    const DEFAULT_FCENTER: f32 = 1.;
-    gphysics.fcenter = DEFAULT_FCENTER;
-    gphysics.slow_mult = 1.;
 }
 
 fn handle_view_event(
