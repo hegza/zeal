@@ -8,7 +8,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_egui::EguiPlugin;
 use camera::ViewMoveEvent;
 use input::{handle_keyboard, handle_mouse};
-use physics::{bubble_physics, BubblePhysics, GlobalPhysics};
+use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
 use resources::{InputMode, OccupiedScreenSpace};
 use ui::ui_example_system;
 
@@ -29,8 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_systems(Update, handle_mouse)
         .add_systems(Update, handle_keyboard)
         .add_systems(Update, handle_view_event)
+        .add_systems(Update, repel_system)
         .add_systems(Update, bubble_physics)
-        .add_systems(Update, update_model)
         .run();
     Ok(())
 }
@@ -44,9 +44,9 @@ fn setup_system(
 
     // Circle
     let positions = [
-        Vec2::new(-150., 50.),
-        Vec2::new(150., 50.),
-        Vec2::new(150., -50.),
+        Vec2::new(-150., 75.),
+        Vec2::new(150., 125.),
+        Vec2::new(150., -75.),
     ];
     for pos in positions {
         commands.spawn((
@@ -58,7 +58,6 @@ fn setup_system(
                 ..default()
             },
             BubblePhysics {
-                pos,
                 vel: Vec2::new(0., 0.),
             },
         ));
@@ -81,11 +80,5 @@ fn handle_view_event(
         let a = &projection.area;
         let mov = Vec2::new(-motion.x() / a.width(), motion.y() / a.height());
         projection.viewport_origin += mov;
-    }
-}
-
-fn update_model(mut q: Query<(&mut Transform, &BubblePhysics)>) {
-    for (mut t, p) in q.iter_mut() {
-        t.translation = Vec3::new(p.pos.x, p.pos.y, 0.);
     }
 }

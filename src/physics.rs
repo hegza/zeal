@@ -37,8 +37,6 @@ impl Default for GlobalPhysics {
 /// Physical state
 #[derive(Component)]
 pub struct BubblePhysics {
-    /// Position
-    pub pos: Vec2,
     /// Velocity
     pub vel: Vec2,
 }
@@ -46,13 +44,39 @@ pub struct BubblePhysics {
 pub fn bubble_physics(
     time: Res<Time>,
     gphysics: Res<GlobalPhysics>,
-    mut q: Query<&mut BubblePhysics>,
+    mut q: Query<(&mut BubblePhysics, &mut Transform)>,
 ) {
-    let positions = q.iter().map(|bubble| bubble.pos).collect::<Vec<_>>();
-    for (bidx, mut bubble) in q.iter_mut().enumerate() {
+    for (mut physics, mut tfm) in q.iter_mut() {
+        let pos = Vec2::new(tfm.translation.x, tfm.translation.y);
         // Apply centering force
-        let fcenter = -bubble.pos * gphysics.fcenter;
-        bubble.vel += fcenter * time.delta_seconds();
+        let fcenter = -pos * gphysics.fcenter;
+        physics.vel += fcenter * time.delta_seconds();
+
+        // Apply slow down
+        // TODO: find a good formula
+        physics.vel *= 1. - gphysics.slow_mult * time.delta_seconds();
+
+        // Apply velocity
+        let delta = physics.vel * time.delta_seconds();
+        tfm.translation = Vec3::new(
+            tfm.translation.x + delta.x,
+            tfm.translation.y + delta.y,
+            tfm.translation.z,
+        );
+    }
+}
+
+pub fn repel_system(
+    time: Res<Time>,
+    gphysics: Res<GlobalPhysics>,
+    mut q: Query<(&mut BubblePhysics, &mut Transform)>,
+) {
+    let positions = q
+        .iter()
+        .map(|(_, tfm)| Vec2::new(tfm.translation.x, tfm.translation.y))
+        .collect::<Vec<_>>();
+    for (bidx, (mut bubble, tfm)) in q.iter_mut().enumerate() {
+        let pos = Vec2::new(tfm.translation.x, tfm.translation.y);
 
         // Apply repel
         // TODO: optimize by separating to another system and filtering based on distance
@@ -62,20 +86,12 @@ pub fn bubble_physics(
             // Do not repel self
             .filter(|(oidx, _)| bidx != *oidx)
             .map(|(_, opos)| {
-                let diff = bubble.pos - *opos;
+                let diff = pos - *opos;
                 let rdist = 1. / (diff.length() * diff.length());
                 let unit = diff.normalize();
                 unit * rdist
             })
             .sum();
         bubble.vel += one_div_by_distances_squared * gphysics.frepel * time.delta_seconds();
-
-        // Apply slow down
-        // TODO: find a good formula
-        bubble.vel *= 1. - gphysics.slow_mult * time.delta_seconds();
-
-        // Apply velocity
-        let delta = bubble.vel * time.delta_seconds();
-        bubble.pos += delta;
     }
 }
