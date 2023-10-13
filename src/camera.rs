@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 
+#[derive(Component)]
+pub struct MainCamera;
+
 // TODO: use Vec2
 #[derive(Event)]
 pub struct ViewMoveEvent(Vec2);
