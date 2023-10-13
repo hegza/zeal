@@ -6,6 +6,8 @@ pub struct GlobalPhysics {
     ///
     /// Each bubble is accelerated towards [0, 0] at `fcenter` per second
     pub fcenter: f32,
+    /// The speed of each bubble is multiplied by `speed_mult` per second
+    pub slow_mult: f32,
 }
 
 /// Physical state
@@ -26,6 +28,10 @@ pub fn bubble_physics(
         // Apply centering force
         let fcenter = -bubble.pos * gphysics.fcenter;
         bubble.vel += fcenter * time.delta_seconds();
+
+        // Apply slow down
+        // TODO: find a good formula
+        bubble.vel *= 1. - gphysics.slow_mult * time.delta_seconds();
 
         // Apply velocity
         let delta = bubble.vel * time.delta_seconds();

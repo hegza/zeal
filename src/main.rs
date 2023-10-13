@@ -71,6 +71,7 @@ fn setup_system(
     // Configure physics
     const DEFAULT_FCENTER: f32 = 1.;
     gphysics.fcenter = DEFAULT_FCENTER;
+    gphysics.slow_mult = 1.;
 }
 
 fn handle_view_event(
