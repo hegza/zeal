@@ -23,3 +23,11 @@ impl InputMode {
         }
     }
 }
+
+#[derive(Resource, Default)]
+pub struct GlobalPhysics {
+    /// Centering force
+    ///
+    /// Each bubble is accelerated towards [0, 0] at `fcenter` per second
+    pub fcenter: f32,
+}

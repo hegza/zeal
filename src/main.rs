@@ -5,9 +5,9 @@ mod ui;
 
 use bevy::{input::mouse::MouseMotion, prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_egui::EguiPlugin;
-use components::MainCamera;
+use components::{BubblePhysics, MainCamera};
 use events::ViewMoveEvent;
-use resources::{InputMode, OccupiedScreenSpace};
+use resources::{GlobalPhysics, InputMode, OccupiedScreenSpace};
 use ui::ui_example_system;
 
 static mut CONNECTION_LENGTH: f64 = 20.0;
@@ -19,6 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_event::<ViewMoveEvent>()
         .init_resource::<OccupiedScreenSpace>()
         .init_resource::<InputMode>()
+        .init_resource::<GlobalPhysics>()
         .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
@@ -26,6 +27,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_systems(Update, handle_mouse)
         .add_systems(Update, handle_keyboard)
         .add_systems(Update, handle_view_event)
+        .add_systems(Update, bubble_physics)
+        .add_systems(Update, update_model)
         .run();
     Ok(())
 }
@@ -34,46 +37,36 @@ fn setup_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut gphysics: ResMut<GlobalPhysics>,
 ) {
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
     // Circle
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(shape::Circle::new(50.).into()).into(),
-        material: materials.add(ColorMaterial::from(Color::PURPLE)),
-        transform: Transform::from_translation(Vec3::new(-150., 0., 0.))
-            .with_scale(Vec3::new(2., 1., 0.)),
-        ..default()
-    });
-
-    // Rectangle
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: Color::rgb(0.25, 0.25, 0.75),
-            custom_size: Some(Vec2::new(50.0, 100.0)),
+    let pos = Vec2::new(-150., 0.);
+    commands.spawn((
+        MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(50.).into()).into(),
+            material: materials.add(ColorMaterial::from(Color::PURPLE)),
+            transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 0.))
+                .with_scale(Vec3::new(2., 1., 0.)),
             ..default()
         },
-        transform: Transform::from_translation(Vec3::new(-50., 0., 0.)),
+        BubblePhysics {
+            pos,
+            vel: Vec2::new(0., 0.),
+        },
+    ));
+
+    commands.spawn(MaterialMesh2dBundle {
+        mesh: meshes.add(shape::Circle::new(5.).into()).into(),
+        material: materials.add(ColorMaterial::from(Color::RED)),
+        transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
         ..default()
     });
 
-    // Quad
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes
-            .add(shape::Quad::new(Vec2::new(50., 100.)).into())
-            .into(),
-        material: materials.add(ColorMaterial::from(Color::LIME_GREEN)),
-        transform: Transform::from_translation(Vec3::new(50., 0., 0.)),
-        ..default()
-    });
-
-    // Hexagon
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(shape::RegularPolygon::new(50., 6).into()).into(),
-        material: materials.add(ColorMaterial::from(Color::TURQUOISE)),
-        transform: Transform::from_translation(Vec3::new(150., 0., 0.)),
-        ..default()
-    });
+    // Configure physics
+    const DEFAULT_FCENTER: f32 = 1.;
+    gphysics.fcenter = DEFAULT_FCENTER;
 }
 
 /// # Documentation
@@ -153,5 +146,23 @@ fn handle_view_event(
         let a = &projection.area;
         let mov = Vec2::new(-motion.x() / a.width(), motion.y() / a.height());
         projection.viewport_origin += mov;
+    }
+}
+
+fn bubble_physics(time: Res<Time>, gphysics: Res<GlobalPhysics>, mut q: Query<&mut BubblePhysics>) {
+    for mut bubble in q.iter_mut() {
+        // Apply centering force
+        let fcenter = -bubble.pos * gphysics.fcenter;
+        bubble.vel += fcenter * time.delta_seconds();
+
+        // Apply velocity
+        let delta = bubble.vel * time.delta_seconds();
+        bubble.pos += delta;
+    }
+}
+
+fn update_model(mut q: Query<(&mut Transform, &BubblePhysics)>) {
+    for (mut t, p) in q.iter_mut() {
+        t.translation = Vec3::new(p.pos.x, p.pos.y, 0.);
     }
 }
