@@ -3,26 +3,33 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct MainCamera;
 
-// TODO: use Vec2
 #[derive(Event)]
-pub struct ViewMoveEvent(Vec2);
+pub enum ViewEvent {
+    Pan(Vec2),
+    ZoomIn(f32),
+}
 
-impl ViewMoveEvent {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self(Vec2::new(x, y))
-    }
+const MIN_SCALE: f32 = 0.2;
 
-    pub fn x(&self) -> f32 {
-        self.0.x
-    }
-
-    pub fn y(&self) -> f32 {
-        self.0.y
+pub fn handle_view_event(
+    mut view_moves: EventReader<ViewEvent>,
+    mut q: Query<&mut OrthographicProjection, With<MainCamera>>,
+) {
+    for motion in view_moves.iter() {
+        let mut projection = q.single_mut();
+        match motion {
+            ViewEvent::Pan(xy) => handle_pan(&mut projection, xy),
+            ViewEvent::ZoomIn(amount) => handle_zoom_in(&mut projection, *amount),
+        }
     }
 }
 
-impl From<Vec2> for ViewMoveEvent {
-    fn from(value: Vec2) -> Self {
-        Self(value)
-    }
+fn handle_zoom_in(projection: &mut OrthographicProjection, amount: f32) {
+    projection.scale = (projection.scale - amount).max(MIN_SCALE);
+}
+
+fn handle_pan(projection: &mut OrthographicProjection, xy: &Vec2) {
+    let a = &projection.area;
+    let pan = Vec2::new(-xy.x / a.width(), xy.y / a.height()) * projection.scale;
+    projection.viewport_origin += pan;
 }

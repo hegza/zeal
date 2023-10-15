@@ -6,7 +6,7 @@ mod ui;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_egui::EguiPlugin;
-use camera::ViewMoveEvent;
+use camera::{handle_view_event, ViewEvent};
 use input::{handle_keyboard, handle_mouse};
 use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
 use resources::{InputMode, OccupiedScreenSpace};
@@ -18,7 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
-        .add_event::<ViewMoveEvent>()
+        .add_event::<ViewEvent>()
         .init_resource::<OccupiedScreenSpace>()
         .init_resource::<InputMode>()
         .init_resource::<GlobalPhysics>()
@@ -69,16 +69,4 @@ fn setup_system(
         transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
         ..default()
     });
-}
-
-fn handle_view_event(
-    mut view_moves: EventReader<ViewMoveEvent>,
-    mut q: Query<&mut OrthographicProjection, With<MainCamera>>,
-) {
-    for motion in view_moves.iter() {
-        let mut projection = q.single_mut();
-        let a = &projection.area;
-        let mov = Vec2::new(-motion.x() / a.width(), motion.y() / a.height());
-        projection.viewport_origin += mov;
-    }
 }

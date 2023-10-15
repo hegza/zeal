@@ -1,6 +1,8 @@
-use bevy::{input::mouse::MouseMotion, prelude::*};
-
-use crate::camera::ViewMoveEvent;
+use crate::camera::ViewEvent;
+use bevy::{
+    input::mouse::{MouseMotion, MouseWheel},
+    prelude::*,
+};
 
 /// # Documentation
 ///
@@ -9,19 +11,38 @@ use crate::camera::ViewMoveEvent;
 pub fn handle_mouse(
     btn_state: Res<Input<MouseButton>>,
     mut mouse_motion: EventReader<MouseMotion>,
-    mut view_moves: EventWriter<ViewMoveEvent>,
+    mut mouse_scroll: EventReader<MouseWheel>,
+    mut view_moves: EventWriter<ViewEvent>,
+) {
+    handle_drag_events(btn_state, &mut mouse_motion, &mut view_moves);
+
+    // Handle scroll events
+    for ev in mouse_scroll.iter() {
+        let MouseWheel { unit: _unit, y, .. } = ev;
+        /*match unit {
+            MouseScrollUnit::Line => todo!(),
+            MouseScrollUnit::Pixel => todo!(),
+        }*/
+        view_moves.send(ViewEvent::ZoomIn(*y));
+    }
+}
+
+fn handle_drag_events(
+    btn_state: Res<Input<MouseButton>>,
+    mouse_motion: &mut EventReader<MouseMotion>,
+    view_moves: &mut EventWriter<ViewEvent>,
 ) {
     let lmb_pressed = btn_state.pressed(MouseButton::Left);
     if lmb_pressed {
         for motion in mouse_motion.iter() {
-            view_moves.send(ViewMoveEvent::new(-motion.delta.x, -motion.delta.y))
+            view_moves.send(ViewEvent::Pan(-motion.delta))
         }
     }
 }
 
 /// Convert arrow keys (left, right, up down) into a normalized vector such as `(1., 0.)` for right arrow or `(-1.,
 /// -1.)` for up and left at the same time
-pub fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
+fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
     let left = skeyboard.pressed(KeyCode::Left);
     let right = skeyboard.pressed(KeyCode::Right);
     let up = skeyboard.pressed(KeyCode::Up);
@@ -60,11 +81,11 @@ pub fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
 pub fn handle_keyboard(
     time: Res<Time>,
     skeyboard: Res<Input<KeyCode>>,
-    mut view_moves: EventWriter<ViewMoveEvent>,
+    mut view_moves: EventWriter<ViewEvent>,
 ) {
     if let Some(v) = arrow_keys_to_vec(&skeyboard) {
         const KB_MOVE_PX_PER_SEC: f32 = 500.;
-        view_moves.send(ViewMoveEvent::from(
+        view_moves.send(ViewEvent::Pan(
             v * KB_MOVE_PX_PER_SEC * time.delta_seconds(),
         ));
     }
