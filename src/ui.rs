@@ -51,38 +51,7 @@ fn right_panel(ctx: &mut egui::Context, gphysics: &mut GlobalPhysics) -> f32 {
             ui.label("Right resizeable panel");
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    CollapsingHeader::new("Physics configurations").show(ui, |ui| {
-                        /*ui.add(egui::Label::new("Connection length"));
-                        ui.add(egui::Slider::new(
-                            &mut unsafe { crate::CONNECTION_LENGTH },
-                            0f64..=100.0,
-                        ));
-                        */
-                        ui.add(egui::Label::new("Repel force"));
-                        ui.add(
-                            egui::Slider::new(
-                                &mut gphysics.frepel,
-                                0.1 * DEFAULT_FREPEL..=10. * DEFAULT_FREPEL,
-                            )
-                            .logarithmic(true),
-                        );
-                        ui.add(egui::Label::new("Gravity"));
-                        ui.add(
-                            egui::Slider::new(
-                                &mut gphysics.fcenter,
-                                0.1 * DEFAULT_FCENTER..=10. * DEFAULT_FCENTER,
-                            )
-                            .logarithmic(true),
-                        );
-                        ui.add(egui::Label::new("Slow / friction"));
-                        ui.add(
-                            egui::Slider::new(
-                                &mut gphysics.slow_mult,
-                                0.1 * DEFAULT_SLOW_MULT..=10. * DEFAULT_SLOW_MULT,
-                            )
-                            .logarithmic(true),
-                        );
-                    });
+                    physics_config_ui(ui, gphysics);
                 })
             });
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
@@ -90,6 +59,41 @@ fn right_panel(ctx: &mut egui::Context, gphysics: &mut GlobalPhysics) -> f32 {
         .response
         .rect
         .width()
+}
+
+fn physics_config_ui(ui: &mut egui::Ui, gphysics: &mut GlobalPhysics) {
+    CollapsingHeader::new("Physics configurations").show(ui, |ui| {
+        /*ui.add(egui::Label::new("Connection length"));
+        ui.add(egui::Slider::new(
+            &mut unsafe { crate::CONNECTION_LENGTH },
+            0f64..=100.0,
+        ));
+        */
+        ui.add(egui::Label::new("Repel force"));
+        ui.add(
+            egui::Slider::new(
+                &mut gphysics.frepel,
+                0.1 * DEFAULT_FREPEL..=10. * DEFAULT_FREPEL,
+            )
+            .logarithmic(true),
+        );
+        ui.add(egui::Label::new("Gravity"));
+        ui.add(
+            egui::Slider::new(
+                &mut gphysics.fcenter,
+                0.1 * DEFAULT_FCENTER..=10. * DEFAULT_FCENTER,
+            )
+            .logarithmic(true),
+        );
+        ui.add(egui::Label::new("Slow / friction"));
+        ui.add(
+            egui::Slider::new(
+                &mut gphysics.slow_mult,
+                0.1 * DEFAULT_SLOW_MULT..=10. * DEFAULT_SLOW_MULT,
+            )
+            .logarithmic(true),
+        );
+    });
 }
 
 fn top_panel(ctx: &mut egui::Context) -> f32 {
