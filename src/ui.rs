@@ -9,7 +9,7 @@ use bevy_egui::{
 };
 
 /// Capitalizes the first character in s.
-pub fn capitalize(s: &str) -> String {
+fn capitalize(s: &str) -> String {
     let mut c = s.chars();
     match c.next() {
         None => String::new(),
@@ -25,7 +25,14 @@ pub fn ui_example_system(
 ) {
     let ctx = contexts.ctx_mut();
 
-    occupied_screen_space.left = egui::SidePanel::left("left_panel")
+    occupied_screen_space.left = left_panel(ctx, &input_mode);
+    occupied_screen_space.right = right_panel(ctx, &mut gphysics);
+    occupied_screen_space.top = top_panel(ctx);
+    occupied_screen_space.bottom = bottom_panel(ctx);
+}
+
+fn left_panel(ctx: &mut egui::Context, input_mode: &InputMode) -> f32 {
+    egui::SidePanel::left("left_panel")
         .resizable(true)
         .show(ctx, |ui| {
             ui.label("Left resizeable panel");
@@ -34,8 +41,11 @@ pub fn ui_example_system(
         })
         .response
         .rect
-        .width();
-    occupied_screen_space.right = egui::SidePanel::right("right_panel")
+        .width()
+}
+
+fn right_panel(ctx: &mut egui::Context, gphysics: &mut GlobalPhysics) -> f32 {
+    egui::SidePanel::right("right_panel")
         .resizable(true)
         .show(ctx, |ui| {
             ui.label("Right resizeable panel");
@@ -79,8 +89,11 @@ pub fn ui_example_system(
         })
         .response
         .rect
-        .width();
-    occupied_screen_space.top = egui::TopBottomPanel::top("top_panel")
+        .width()
+}
+
+fn top_panel(ctx: &mut egui::Context) -> f32 {
+    egui::TopBottomPanel::top("top_panel")
         .resizable(true)
         .show(ctx, |ui| {
             ui.label("Top resizeable panel");
@@ -88,8 +101,11 @@ pub fn ui_example_system(
         })
         .response
         .rect
-        .height();
-    occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
+        .height()
+}
+
+fn bottom_panel(ctx: &mut egui::Context) -> f32 {
+    egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(true)
         .show(ctx, |ui| {
             ui.label("Bottom resizeable panel");
@@ -97,5 +113,5 @@ pub fn ui_example_system(
         })
         .response
         .rect
-        .height();
+        .height()
 }

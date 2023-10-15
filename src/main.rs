@@ -15,8 +15,14 @@ use ui::ui_example_system;
 use crate::camera::MainCamera;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    App::new()
-        .add_plugins(DefaultPlugins)
+    let mut app = create_app();
+    app.run();
+    Ok(())
+}
+
+fn create_app() -> App {
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
         .add_event::<ViewEvent>()
         .init_resource::<OccupiedScreenSpace>()
@@ -30,9 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_systems(Update, handle_keyboard)
         .add_systems(Update, handle_view_event)
         .add_systems(Update, repel_system)
-        .add_systems(Update, bubble_physics)
-        .run();
-    Ok(())
+        .add_systems(Update, bubble_physics);
+    app
 }
 
 fn setup_system(

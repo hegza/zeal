@@ -48,6 +48,7 @@ pub fn bubble_physics(
 ) {
     for (mut physics, mut tfm) in q.iter_mut() {
         let pos = Vec2::new(tfm.translation.x, tfm.translation.y);
+
         // Apply centering force
         let fcenter = -pos * gphysics.fcenter;
         physics.vel += fcenter * time.delta_seconds();
