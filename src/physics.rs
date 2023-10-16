@@ -3,6 +3,8 @@ use bevy::prelude::*;
 pub const DEFAULT_FCENTER: f32 = 3.;
 pub const DEFAULT_SLOW_MULT: f32 = 10.;
 pub const DEFAULT_FREPEL: f32 = 10_000_000.;
+pub const DEFAULT_FLINK: f32 = 2.;
+pub const DEFAULT_LINK_BASE: f32 = 2.;
 
 #[derive(Resource)]
 pub struct GlobalPhysics {
@@ -12,10 +14,14 @@ pub struct GlobalPhysics {
     pub fcenter: f32,
     /// The speed of each bubble is multiplied by `speed_mult` per second
     pub slow_mult: f32,
-    /// Repel force between bubble
+    /// Repel force multiplier between bubbles
     ///
     /// TODO: should apply based on distance between bubble edges, not centers
     pub frepel: f32,
+    /// Link pull multiplier per distance (k in kx + b)
+    pub flink: f32,
+    /// Likn base pull (b in kx + b)
+    pub link_base: f32,
 }
 
 impl Default for GlobalPhysics {
@@ -25,11 +31,15 @@ impl Default for GlobalPhysics {
         let fcenter = DEFAULT_FCENTER;
         let slow_mult = DEFAULT_SLOW_MULT;
         let frepel = DEFAULT_FREPEL;
+        let flink = DEFAULT_FLINK;
+        let link_base = DEFAULT_LINK_BASE;
 
         Self {
             fcenter,
             slow_mult,
             frepel,
+            flink,
+            link_base,
         }
     }
 }

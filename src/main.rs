@@ -1,3 +1,4 @@
+mod bubble_graph;
 mod camera;
 mod input;
 mod physics;
@@ -6,21 +7,22 @@ mod ui;
 
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use bevy_egui::EguiPlugin;
+use bubble_graph::BubbleGraph;
 use camera::{handle_view_event, ViewEvent};
 use input::{handle_keyboard, handle_mouse};
-use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
+use physics::{bubble_physics, repel_system, GlobalPhysics};
 use resources::{InputMode, OccupiedScreenSpace};
 use ui::ui_example_system;
 
 use crate::camera::MainCamera;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut app = create_app();
+    let mut app = default_app();
     app.run();
     Ok(())
 }
 
-fn create_app() -> App {
+fn default_app() -> App {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
@@ -28,6 +30,7 @@ fn create_app() -> App {
         .init_resource::<OccupiedScreenSpace>()
         .init_resource::<InputMode>()
         .init_resource::<GlobalPhysics>()
+        .init_resource::<BubbleGraph>()
         .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
@@ -48,6 +51,7 @@ fn setup_system(
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
     // Circle
+    /*
     let positions = [
         Vec2::new(-150., 75.),
         Vec2::new(150., 125.),
@@ -66,7 +70,7 @@ fn setup_system(
                 vel: Vec2::new(0., 0.),
             },
         ));
-    }
+    }*/
 
     commands.spawn(MaterialMesh2dBundle {
         mesh: meshes.add(shape::Circle::new(5.).into()).into(),
