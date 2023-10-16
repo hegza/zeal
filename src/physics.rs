@@ -45,7 +45,7 @@ impl Default for GlobalPhysics {
 }
 
 /// Physical state
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct BubblePhysics {
     /// Velocity
     pub vel: Vec2,
