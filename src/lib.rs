@@ -49,33 +49,11 @@ fn setup_system(
 ) {
     commands.spawn((Camera2dBundle::default(), MainCamera));
 
-    // Circle
-    /*
-    let positions = [
-        Vec2::new(-150., 75.),
-        Vec2::new(150., 125.),
-        Vec2::new(150., -75.),
-    ];
-    for pos in positions {
-        commands.spawn((
-            MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(50.).into()).into(),
-                material: materials.add(ColorMaterial::from(Color::PURPLE)),
-                transform: Transform::from_translation(Vec3::new(pos.x, pos.y, 0.))
-                    .with_scale(Vec3::new(2., 1., 0.)),
-                ..default()
-            },
-            BubblePhysics {
-                vel: Vec2::new(0., 0.),
-            },
-        ));
-    }*/
-
     // Spawn zero marker circle
     commands.spawn(MaterialMesh2dBundle {
         mesh: meshes.add(shape::Circle::new(5.).into()).into(),
         material: materials.add(ColorMaterial::from(Color::RED)),
-        transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
+        transform: Transform::from_translation(Vec3::new(0., 0., 2.)),
         ..default()
     });
 }
@@ -124,7 +102,7 @@ impl<'c, 'me, 'ma, 'g, 'w, 's> BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
         let mesh = self.meshes.add(shape::Circle::new(50.).into()).into();
         let material = self.materials.add(ColorMaterial::from(Color::PURPLE));
         let transform =
-            Transform::from_translation(pos.extend(0.)).with_scale(Vec3::new(2., 1., 0.));
+            Transform::from_translation(pos.extend(1.)).with_scale(Vec3::new(2., 1., 0.));
         self.positions_by_id.insert(id, pos);
         let bundle = (
             MaterialMesh2dBundle {

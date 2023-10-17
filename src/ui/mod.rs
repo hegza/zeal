@@ -1,12 +1,16 @@
+mod physics_config;
+
 use crate::{
-    physics::{GlobalPhysics, DEFAULT_FCENTER, DEFAULT_FREPEL, DEFAULT_SLOW_MULT},
+    physics::GlobalPhysics,
     resources::{InputMode, OccupiedScreenSpace},
 };
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{self, CollapsingHeader},
+    egui::{self},
     EguiContexts,
 };
+
+use self::physics_config::physics_config_ui;
 
 /// Capitalizes the first character in s.
 fn capitalize(s: &str) -> String {
@@ -59,43 +63,6 @@ fn right_panel(ctx: &mut egui::Context, gphysics: &mut GlobalPhysics) -> f32 {
         .response
         .rect
         .width()
-}
-
-fn physics_config_ui(ui: &mut egui::Ui, gphysics: &mut GlobalPhysics) {
-    CollapsingHeader::new("Physics configurations")
-        .default_open(true)
-        .show(ui, |ui| {
-            /*ui.add(egui::Label::new("Connection length"));
-            ui.add(egui::Slider::new(
-                &mut unsafe { crate::CONNECTION_LENGTH },
-                0f64..=100.0,
-            ));
-            */
-            ui.add(egui::Label::new("Repel force"));
-            ui.add(
-                egui::Slider::new(
-                    &mut gphysics.frepel,
-                    0.1 * DEFAULT_FREPEL..=10. * DEFAULT_FREPEL,
-                )
-                .logarithmic(true),
-            );
-            ui.add(egui::Label::new("Gravity"));
-            ui.add(
-                egui::Slider::new(
-                    &mut gphysics.fcenter,
-                    0.1 * DEFAULT_FCENTER..=10. * DEFAULT_FCENTER,
-                )
-                .logarithmic(true),
-            );
-            ui.add(egui::Label::new("Slow / friction"));
-            ui.add(
-                egui::Slider::new(
-                    &mut gphysics.slow_mult,
-                    0.1 * DEFAULT_SLOW_MULT..=10. * DEFAULT_SLOW_MULT,
-                )
-                .logarithmic(true),
-            );
-        });
 }
 
 fn top_panel(ctx: &mut egui::Context) -> f32 {
