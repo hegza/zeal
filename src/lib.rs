@@ -71,6 +71,20 @@ pub struct BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, 'ma, 'asset> {
     positions_by_id: HashMap<BubbleId, Vec2>,
 }
 
+/// Returns a circle mesh and a scaling vector
+fn make_scaled_circle(size: Vec2) -> (Mesh, Vec2) {
+    let (radius, scale) = if size.x < size.y {
+        (size.x, Vec2::new(1.0, size.y / size.x))
+    } else {
+        (size.y, Vec2::new(size.x / size.y, 1.0))
+    };
+    (shape::Circle::new(radius).into(), scale)
+}
+
+fn biggest_rectangle_in_ellipse(ellipse_size: Vec2) -> Vec2 {
+    Vec2::new(2f32.sqrt() * ellipse_size.x, 2f32.sqrt() * ellipse_size.y)
+}
+
 impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, 'ma, 'asset> {
     pub fn new(
         commands: &'c mut Commands<'w, 's>,
@@ -112,10 +126,11 @@ impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, '
         let physics = BubblePhysics::default();
         let id = self.graph.insert();
         let bubble = GraphBubble(id);
-        let mesh = self.meshes.add(shape::Circle::new(50.).into()).into();
+        let ellipse_size = Vec2::new(100., 50.);
+        let (circle_mesh, scale) = make_scaled_circle(ellipse_size);
+        let mesh = self.meshes.add(circle_mesh).into();
         let material = self.materials.add(ColorMaterial::from(Color::PURPLE));
-        let transform =
-            Transform::from_translation(pos.extend(1.)).with_scale(Vec3::new(2., 1., 0.));
+        let transform = Transform::from_translation(pos.extend(1.)).with_scale(scale.extend(1.));
         self.positions_by_id.insert(id, pos);
         let bundle = (
             MaterialMesh2dBundle {
@@ -132,6 +147,7 @@ impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, '
             color: Color::WHITE,
             ..Default::default()
         };
+
         // Spawn the bubble with a text box as a child
         self.commands.spawn(bundle).with_children(|builder| {
             builder.spawn(Text2dBundle {
@@ -139,6 +155,7 @@ impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, '
                     sections: vec![TextSection::new(
                         //"this text wraps in the box\n(AnyCharacter linebreaks)",
                         id.to_string(),
+                        //"Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur",
                         text_style.clone(),
                     )],
                     alignment: TextAlignment::Center,
@@ -146,7 +163,7 @@ impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, '
                 },
                 text_2d_bounds: Text2dBounds {
                     // Wrap text in the rectangle
-                    size: Vec2::new(150., 100.),
+                    size: biggest_rectangle_in_ellipse(ellipse_size),
                 },
                 // Ensure the text is drawn on top
                 transform: Transform::from_translation(Vec3::Z).with_scale(Vec3::new(0.5, 1., 1.)),
