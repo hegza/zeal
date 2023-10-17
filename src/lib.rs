@@ -6,7 +6,12 @@ pub mod physics;
 pub mod resources;
 pub mod ui;
 
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, utils::HashMap};
+use bevy::{
+    prelude::*,
+    sprite::MaterialMesh2dBundle,
+    text::{BreakLineOn, Text2dBounds},
+    utils::HashMap,
+};
 use bevy_egui::EguiPlugin;
 use bevy_prototype_lyon::prelude::*;
 use bubble_graph::{BubbleGraph, BubbleId};
@@ -32,13 +37,12 @@ pub fn default_app() -> App {
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
         .add_systems(Update, ui_example_system)
-        .add_systems(Update, handle_mouse)
-        .add_systems(Update, handle_keyboard)
+        .add_systems(Update, (handle_mouse, handle_keyboard))
         .add_systems(Update, handle_view_event)
         .add_systems(Update, repel_system)
         .add_systems(Update, bubble_physics)
         .add_systems(Update, link_physics)
-        .add_systems(Update, update_links);
+        .add_systems(PostUpdate, update_links);
     app
 }
 
@@ -58,23 +62,32 @@ fn setup_system(
     });
 }
 
-pub struct BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
+pub struct BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, 'ma, 'asset> {
     commands: &'c mut Commands<'w, 's>,
     graph: &'g mut BubbleGraph,
     meshes: &'me mut Assets<Mesh>,
     materials: &'ma mut Assets<ColorMaterial>,
+    _asset_server: &'asset AssetServer,
     positions_by_id: HashMap<BubbleId, Vec2>,
 }
 
-impl<'c, 'me, 'ma, 'g, 'w, 's> BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
+impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, 'ma, 'asset> {
     pub fn new(
         commands: &'c mut Commands<'w, 's>,
         graph: &'g mut BubbleGraph,
         meshes: &'me mut Assets<Mesh>,
         materials: &'ma mut Assets<ColorMaterial>,
+        asset_server: &'asset AssetServer,
     ) -> Self {
         let positions_by_id = HashMap::new();
-        Self::from_positions_by_id(positions_by_id, commands, graph, meshes, materials)
+        Self::from_positions_by_id(
+            positions_by_id,
+            commands,
+            graph,
+            meshes,
+            materials,
+            asset_server,
+        )
     }
 
     pub fn from_positions_by_id(
@@ -83,6 +96,7 @@ impl<'c, 'me, 'ma, 'g, 'w, 's> BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
         graph: &'g mut BubbleGraph,
         meshes: &'me mut Assets<Mesh>,
         materials: &'ma mut Assets<ColorMaterial>,
+        _asset_server: &'asset AssetServer,
     ) -> Self {
         Self {
             commands,
@@ -90,13 +104,12 @@ impl<'c, 'me, 'ma, 'g, 'w, 's> BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
             meshes,
             materials,
             positions_by_id,
+            _asset_server,
         }
     }
 
     pub fn create_bubble(&mut self, pos: Vec2) -> BubbleId {
-        let physics = BubblePhysics {
-            vel: Vec2::new(0., 0.),
-        };
+        let physics = BubblePhysics::default();
         let id = self.graph.insert();
         let bubble = GraphBubble(id);
         let mesh = self.meshes.add(shape::Circle::new(50.).into()).into();
@@ -114,7 +127,32 @@ impl<'c, 'me, 'ma, 'g, 'w, 's> BubbleGraphBuilder<'c, 'me, 'ma, 'g, 'w, 's> {
             physics,
             bubble,
         );
-        self.commands.spawn(bundle);
+        let text_style = TextStyle {
+            font_size: 24.,
+            color: Color::WHITE,
+            ..Default::default()
+        };
+        // Spawn the bubble with a text box as a child
+        self.commands.spawn(bundle).with_children(|builder| {
+            builder.spawn(Text2dBundle {
+                text: Text {
+                    sections: vec![TextSection::new(
+                        //"this text wraps in the box\n(AnyCharacter linebreaks)",
+                        id.to_string(),
+                        text_style.clone(),
+                    )],
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: BreakLineOn::AnyCharacter,
+                },
+                text_2d_bounds: Text2dBounds {
+                    // Wrap text in the rectangle
+                    size: Vec2::new(150., 100.),
+                },
+                // Ensure the text is drawn on top
+                transform: Transform::from_translation(Vec3::Z).with_scale(Vec3::new(0.5, 1., 1.)),
+                ..default()
+            });
+        });
         id
     }
 

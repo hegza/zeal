@@ -38,9 +38,16 @@ fn extra_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut asset_server: Res<AssetServer>,
 ) {
     // Make a bubble
-    let mut graph = BubbleGraphBuilder::new(&mut commands, &mut graph, &mut meshes, &mut materials);
+    let mut graph = BubbleGraphBuilder::new(
+        &mut commands,
+        &mut graph,
+        &mut meshes,
+        &mut materials,
+        &mut asset_server,
+    );
 
     let id = graph.create_bubble(Vec2::ZERO);
     unsafe {
@@ -56,6 +63,7 @@ fn countdown(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     q: Query<(&GraphBubble, &Transform)>,
+    asset_server: Res<AssetServer>,
 ) {
     let pos_by_id = q
         .iter()
@@ -67,6 +75,7 @@ fn countdown(
         &mut graph,
         &mut meshes,
         &mut materials,
+        &asset_server,
     );
 
     if countdown.timer.tick(time.delta()).just_finished() {
