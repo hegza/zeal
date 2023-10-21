@@ -149,18 +149,19 @@ impl<'c, 'w, 's, 'g, 'me, 'ma, 'asset> BubbleGraphBuilder<'c, 'w, 's, 'g, 'me, '
         };
 
         // Spawn the bubble with a text box as a child
+        let text = Text {
+            sections: vec![TextSection::new(
+                //"this text wraps in the box\n(AnyCharacter linebreaks)",
+                id.to_string(),
+                //"Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur",
+                text_style.clone(),
+            )],
+            alignment: TextAlignment::Center,
+            linebreak_behavior: BreakLineOn::AnyCharacter,
+        };
         self.commands.spawn(bundle).with_children(|builder| {
             builder.spawn(Text2dBundle {
-                text: Text {
-                    sections: vec![TextSection::new(
-                        //"this text wraps in the box\n(AnyCharacter linebreaks)",
-                        id.to_string(),
-                        //"Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur, Lorem ipsum dolor sit amet consectetur",
-                        text_style.clone(),
-                    )],
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: BreakLineOn::AnyCharacter,
-                },
+                text,
                 text_2d_bounds: Text2dBounds {
                     // Wrap text in the rectangle
                     size: biggest_rectangle_in_ellipse(ellipse_size),
