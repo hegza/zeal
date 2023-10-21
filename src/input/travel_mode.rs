@@ -1,9 +1,10 @@
 use bevy::{prelude::*, time::Time};
 use bevy_egui::EguiContexts;
 
-use crate::camera::ControlEvent;
-
-use super::arrow_keys_to_vec;
+use crate::{
+    camera::ControlEvent,
+    cursor_control::{CursorControl, InputMode},
+};
 
 /// # Documentation
 ///
@@ -16,6 +17,7 @@ use super::arrow_keys_to_vec;
 pub fn handle_keyboard(
     mut contexts: EguiContexts,
     time: Res<Time>,
+    control: Res<CursorControl>,
     keyboard_state: Res<Input<KeyCode>>,
     mut control_events: EventWriter<ControlEvent>,
 ) {
@@ -27,6 +29,13 @@ pub fn handle_keyboard(
     }
 
     handle_arrow_keys(&keyboard_state, &time, &mut control_events);
+
+    if keyboard_state.pressed(KeyCode::I) {
+        if let Some(bubble_id) = control.selected {
+            // Change from travel mode to edit mode
+            control_events.send(ControlEvent::ChangeMode(InputMode::Edit(bubble_id)));
+        }
+    }
 }
 
 fn handle_arrow_keys(
@@ -39,4 +48,32 @@ fn handle_arrow_keys(
         let pan_event = ControlEvent::Pan(v * KB_MOVE_PX_PER_SEC * time.delta_seconds());
         control_events.send(pan_event);
     }
+}
+
+/// Convert arrow keys (left, right, up down) into a normalized vector such as `(1., 0.)` for right arrow or `(-1.,
+/// -1.)` for up and left at the same time
+fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
+    let left = skeyboard.pressed(KeyCode::Left);
+    let right = skeyboard.pressed(KeyCode::Right);
+    let up = skeyboard.pressed(KeyCode::Up);
+    let down = skeyboard.pressed(KeyCode::Down);
+
+    let dx = match (left, right) {
+        (true, false) => Some(-1.),
+        (false, true) => Some(1.),
+        _ => None,
+    };
+    let dy = match (up, down) {
+        (true, false) => Some(-1.),
+        (false, true) => Some(1.),
+        _ => None,
+    };
+
+    if dx.is_none() && dy.is_none() {
+        return None;
+    }
+
+    let x = dx.unwrap_or(0.);
+    let y = dy.unwrap_or(0.);
+    Some(Vec2::new(x, y))
 }

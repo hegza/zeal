@@ -64,34 +64,6 @@ fn handle_drag_events(
     }
 }
 
-/// Convert arrow keys (left, right, up down) into a normalized vector such as `(1., 0.)` for right arrow or `(-1.,
-/// -1.)` for up and left at the same time
-fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
-    let left = skeyboard.pressed(KeyCode::Left);
-    let right = skeyboard.pressed(KeyCode::Right);
-    let up = skeyboard.pressed(KeyCode::Up);
-    let down = skeyboard.pressed(KeyCode::Down);
-
-    let dx = match (left, right) {
-        (true, false) => Some(-1.),
-        (false, true) => Some(1.),
-        _ => None,
-    };
-    let dy = match (up, down) {
-        (true, false) => Some(-1.),
-        (false, true) => Some(1.),
-        _ => None,
-    };
-
-    if dx.is_none() && dy.is_none() {
-        return None;
-    }
-
-    let x = dx.unwrap_or(0.);
-    let y = dy.unwrap_or(0.);
-    Some(Vec2::new(x, y))
-}
-
 /// # Documentation
 ///
 /// Input handling: https://bevy-cheatbook.github.io/builtins.html#input-handling-resources
@@ -105,10 +77,12 @@ pub fn handle_keyboard(
     time: Res<Time>,
     skeyboard: Res<Input<KeyCode>>,
     view_moves: EventWriter<ControlEvent>,
-    cursor_control: Res<CursorControl>,
+    control: Res<CursorControl>,
 ) {
-    match cursor_control.input_mode {
-        InputMode::Travel => travel_mode::handle_keyboard(contexts, time, skeyboard, view_moves),
+    match control.input_mode {
+        InputMode::Travel => {
+            travel_mode::handle_keyboard(contexts, time, control, skeyboard, view_moves)
+        }
         InputMode::Edit(_) => todo!(),
     }
 }
