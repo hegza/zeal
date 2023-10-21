@@ -4,7 +4,6 @@ pub mod cursor_control;
 pub mod input;
 pub mod layers;
 pub mod physics;
-pub mod resources;
 pub mod ui;
 
 use bevy::{
@@ -20,8 +19,7 @@ use camera::{handle_view_event, ControlEvent};
 use cursor_control::CursorControl;
 use input::{handle_keyboard, handle_mouse};
 use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
-use resources::OccupiedScreenSpace;
-use ui::{ui_example_system, ControlHistory};
+use ui::{ui_example_system, ControlHistory, OccupiedScreenSpace};
 
 use crate::camera::MainCamera;
 

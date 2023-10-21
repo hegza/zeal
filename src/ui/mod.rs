@@ -1,20 +1,25 @@
 mod physics_config;
 
-use std::collections::VecDeque;
-
+use self::physics_config::physics_config_ui;
 use crate::{
     camera::ControlEvent,
     cursor_control::{CursorControl, InputMode},
     physics::GlobalPhysics,
-    resources::OccupiedScreenSpace,
 };
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, CollapsingHeader},
     EguiContexts,
 };
+use std::collections::VecDeque;
 
-use self::physics_config::physics_config_ui;
+#[derive(Resource, Default)]
+pub struct OccupiedScreenSpace {
+    pub left: f32,
+    pub top: f32,
+    pub right: f32,
+    pub bottom: f32,
+}
 
 /// Capitalizes the first character in s.
 fn capitalize(s: &str) -> String {

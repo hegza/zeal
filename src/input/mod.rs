@@ -1,23 +1,40 @@
-use crate::camera::ControlEvent;
+mod travel_mode;
+
+use crate::{
+    camera::ControlEvent,
+    cursor_control::{CursorControl, InputMode},
+};
 use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
     prelude::*,
 };
+use bevy_egui::EguiContexts;
 
 /// # Documentation
 ///
 /// Input handling: https://bevy-cheatbook.github.io/builtins.html#input-handling-resources
 /// Input event list: https://bevy-cheatbook.github.io/builtins.html#input-events
 pub fn handle_mouse(
+    contexts: EguiContexts,
     btn_state: Res<Input<MouseButton>>,
     mut mouse_motions: EventReader<MouseMotion>,
     mut mouse_wheels: EventReader<MouseWheel>,
     mut view_evs: EventWriter<ControlEvent>,
 ) {
+    // If the cursor is on top of egui, do not create control events
+    if egui_is_hovered(contexts) {
+        return;
+    }
+
     handle_drag_events(btn_state, &mut mouse_motions, &mut view_evs);
 
     // Handle scroll events
     handle_wheel_events(&mut mouse_wheels, &mut view_evs);
+}
+
+fn egui_is_hovered(mut contexts: EguiContexts) -> bool {
+    let ctx = contexts.ctx_mut();
+    ctx.is_pointer_over_area()
 }
 
 fn handle_wheel_events(
@@ -84,13 +101,14 @@ fn arrow_keys_to_vec(skeyboard: &Input<KeyCode>) -> Option<Vec2> {
 ///
 /// * `skeyboard` - Keyboard state
 pub fn handle_keyboard(
+    contexts: EguiContexts,
     time: Res<Time>,
     skeyboard: Res<Input<KeyCode>>,
-    mut view_moves: EventWriter<ControlEvent>,
+    view_moves: EventWriter<ControlEvent>,
+    cursor_control: Res<CursorControl>,
 ) {
-    if let Some(v) = arrow_keys_to_vec(&skeyboard) {
-        const KB_MOVE_PX_PER_SEC: f32 = 500.;
-        let pan_event = ControlEvent::Pan(v * KB_MOVE_PX_PER_SEC * time.delta_seconds());
-        view_moves.send(pan_event);
+    match cursor_control.input_mode {
+        InputMode::Travel => travel_mode::handle_keyboard(contexts, time, skeyboard, view_moves),
+        InputMode::Edit(_) => todo!(),
     }
 }
