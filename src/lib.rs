@@ -1,5 +1,6 @@
 pub mod bubble_graph;
 pub mod camera;
+pub mod cursor_control;
 pub mod input;
 pub mod layers;
 pub mod physics;
@@ -15,11 +16,12 @@ use bevy::{
 use bevy_egui::EguiPlugin;
 use bevy_prototype_lyon::prelude::*;
 use bubble_graph::{BubbleGraph, BubbleId};
-use camera::{handle_view_event, ViewEvent};
+use camera::{handle_view_event, ControlEvent};
+use cursor_control::CursorControl;
 use input::{handle_keyboard, handle_mouse};
 use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
-use resources::{InputMode, OccupiedScreenSpace};
-use ui::ui_example_system;
+use resources::OccupiedScreenSpace;
+use ui::{ui_example_system, ControlHistory};
 
 use crate::camera::MainCamera;
 
@@ -28,11 +30,12 @@ pub fn default_app() -> App {
     app.add_plugins(DefaultPlugins)
         .add_plugins(EguiPlugin)
         .add_plugins(ShapePlugin)
-        .add_event::<ViewEvent>()
+        .add_event::<ControlEvent>()
         .init_resource::<OccupiedScreenSpace>()
-        .init_resource::<InputMode>()
+        .init_resource::<CursorControl>()
         .init_resource::<GlobalPhysics>()
         .init_resource::<BubbleGraph>()
+        .init_resource::<ControlHistory>()
         .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
@@ -42,8 +45,18 @@ pub fn default_app() -> App {
         .add_systems(Update, repel_system)
         .add_systems(Update, bubble_physics)
         .add_systems(Update, link_physics)
+        .add_systems(Update, record_command_history)
         .add_systems(PostUpdate, update_links);
     app
+}
+
+fn record_command_history(
+    mut commands: EventReader<ControlEvent>,
+    mut history: ResMut<ControlHistory>,
+) {
+    // HACK: should not need to allocate a vec here
+    let v = commands.iter().cloned().collect::<Vec<_>>();
+    history.extend(v.into_iter());
 }
 
 fn setup_system(

@@ -1,3 +1,4 @@
+// TODO: this module is obsolete
 use bevy::prelude::Resource;
 
 #[derive(Default, Resource)]
@@ -6,20 +7,4 @@ pub struct OccupiedScreenSpace {
     pub top: f32,
     pub right: f32,
     pub bottom: f32,
-}
-
-#[derive(Default, Resource)]
-pub enum InputMode {
-    #[default]
-    Travel,
-    Insert,
-}
-
-impl InputMode {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            InputMode::Travel => "travel",
-            InputMode::Insert => "insert",
-        }
-    }
 }
