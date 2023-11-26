@@ -30,7 +30,7 @@ fn capitalize(s: &str) -> String {
     }
 }
 
-pub fn ui_example_system(
+pub fn ui_system(
     mut contexts: EguiContexts,
     mut occupied_screen_space: ResMut<OccupiedScreenSpace>,
     cursor_control: Res<CursorControl>,
@@ -126,8 +126,11 @@ impl ControlHistory {
     }
     pub fn extend(&mut self, events: impl Iterator<Item = ControlEvent> + Clone) {
         let push_count = events.clone().count();
+        self.extend_with_len(events, push_count);
+    }
+    pub fn extend_with_len(&mut self, events: impl Iterator<Item = ControlEvent>, len: usize) {
         let space_left_after_push: isize =
-            self.max_len as isize - (self.queue.len() + push_count) as isize;
+            self.max_len as isize - (self.queue.len() + len) as isize;
         if space_left_after_push < 0 {
             let overflow = (-space_left_after_push) as usize;
             // Drain N elements from the front where

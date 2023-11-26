@@ -19,7 +19,7 @@ use camera::{handle_view_event, ControlEvent};
 use cursor_control::CursorControl;
 use input::{handle_keyboard, handle_mouse};
 use physics::{bubble_physics, repel_system, BubblePhysics, GlobalPhysics};
-use ui::{ui_example_system, ControlHistory, OccupiedScreenSpace};
+use ui::{ui_system, ControlHistory, OccupiedScreenSpace};
 
 use crate::camera::MainCamera;
 
@@ -37,7 +37,7 @@ pub fn default_app() -> App {
         .add_systems(Startup, setup_system)
         // Systems that create Egui widgets should be run during the `CoreSet::Update` set,
         // or after the `EguiSet::BeginFrame` system (which belongs to the `CoreSet::PreUpdate` set).
-        .add_systems(Update, ui_example_system)
+        .add_systems(Update, ui_system)
         .add_systems(Update, (handle_mouse, handle_keyboard))
         .add_systems(Update, handle_view_event)
         .add_systems(Update, repel_system)
@@ -52,9 +52,8 @@ fn record_command_history(
     mut commands: EventReader<ControlEvent>,
     mut history: ResMut<ControlHistory>,
 ) {
-    // HACK: should not need to allocate a vec here
-    let v = commands.iter().cloned().collect::<Vec<_>>();
-    history.extend(v.into_iter());
+    let len = commands.len();
+    history.extend_with_len(commands.iter().cloned(), len);
 }
 
 fn setup_system(
