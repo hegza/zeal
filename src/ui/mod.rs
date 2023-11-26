@@ -70,7 +70,7 @@ fn right_panel(
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     physics_config_ui(ui, gphysics);
-                    input_event_log(ui, history);
+                    input_event_log_ui(ui, history);
                 })
             });
             ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
@@ -139,12 +139,49 @@ impl ControlHistory {
     }
 }
 
-pub fn input_event_log(ui: &mut egui::Ui, history: &ControlHistory) {
-    CollapsingHeader::new("Input events")
+pub fn input_event_log_ui(ui: &mut egui::Ui, history: &ControlHistory) {
+    CollapsingHeader::new(format!("Input events (hist = {})", history.queue.len()))
         .default_open(true)
         .show(ui, |ui| {
-            for ev in history.queue.iter().rev() {
-                ui.label(format!("{:?}", &ev));
-            }
+            let events_it = history.queue.iter().rev();
+            let display_vec = merge_similar_events(events_it);
+            labels_ui(display_vec.into_iter().map(|x| format!("{x:?}")), ui);
         });
+}
+
+/// Merges a list of events by collating events of the same type into single events
+fn merge_similar_events<'a>(
+    it: impl Iterator<Item = &'a ControlEvent> + Clone,
+) -> Vec<ControlEvent> {
+    use ControlEvent as CE;
+
+    let mut ret = Vec::with_capacity(it.clone().count());
+    for ev in it {
+        if let Some(back) = ret.last_mut() {
+            match (back, ev) {
+                (CE::Pan(v1), CE::Pan(v2)) => {
+                    *v1 += *v2;
+                }
+                (CE::ZoomIn(f1), CE::ZoomIn(f2)) => {
+                    *f1 += *f2;
+                }
+                (CE::ChangeMode(old_mode), CE::ChangeMode(new_mode)) => {
+                    *old_mode = new_mode.clone();
+                }
+                _ => {
+                    ret.push(ev.clone());
+                }
+            }
+        } else {
+            ret.push(ev.clone());
+        }
+    }
+    ret
+}
+
+/// Draw a list of labels
+fn labels_ui(labels: impl Iterator<Item = impl Into<egui::WidgetText>>, ui: &mut egui::Ui) {
+    for l in labels {
+        ui.label(Into::<egui::WidgetText>::into(l));
+    }
 }
