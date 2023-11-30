@@ -1,4 +1,4 @@
-use bevy::prelude::Resource;
+use bevy::prelude::*;
 use petgraph::stable_graph::StableDiGraph;
 
 pub type BubbleId = u32;

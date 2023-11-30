@@ -1,4 +1,4 @@
-use crate::bubble_graph::BubbleId;
+use crate::bubbles::BubbleId;
 use bevy::prelude::*;
 
 #[derive(Resource, Default)]

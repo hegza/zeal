@@ -1,8 +1,7 @@
 use std::ops::RangeInclusive;
 
 use crate::physics::{
-    GlobalPhysics, DEFAULT_FCENTER, DEFAULT_FLINK, DEFAULT_FREPEL, DEFAULT_LINK_BASE,
-    DEFAULT_SLOW_MULT,
+    GlobalPhysics, DEFAULT_FCENTER, DEFAULT_FLINK, DEFAULT_FREPEL, DEFAULT_SLOW_MULT,
 };
 use bevy_egui::egui::{self, CollapsingHeader};
 use eframe::emath::Numeric;
@@ -31,15 +30,9 @@ pub fn physics_config_ui(ui: &mut egui::Ui, gphysics: &mut GlobalPhysics) {
                 ui,
             );
             log_slider(
-                "Link distance multiplier (k in k*x + b)",
+                "Link distance multiplier (k in k*x)",
                 &mut gphysics.flink,
                 0.1 * DEFAULT_FLINK..=10. * DEFAULT_FLINK,
-                ui,
-            );
-            log_slider(
-                "Link base force (b in k*x + b)",
-                &mut gphysics.link_base,
-                0.1 * DEFAULT_LINK_BASE..=10. * DEFAULT_LINK_BASE,
                 ui,
             );
         });
